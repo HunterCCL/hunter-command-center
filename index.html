@@ -390,7 +390,7 @@
   /* ── PROJECT DETAIL SCREEN ── */
   .project-detail-screen { display:none; flex-direction:column; flex:1; min-height:0; }
   .project-detail-screen.active { display:flex; }
-  .project-detail-content { flex:1; overflow-y:auto; padding:24px 28px; min-height:0; }
+  .project-detail-content { flex:1; overflow-y:auto; padding:24px 28px; min-height:0; height:100%; }
   .project-detail-content::-webkit-scrollbar { width:4px; }
   .project-detail-content::-webkit-scrollbar-thumb { background:var(--accent-2); border-radius:2px; }
   .pds-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; }
@@ -704,13 +704,6 @@
 
   <!-- PROJECT DETAIL SCREEN -->
   <div id="page-project-detail" class="page">
-    <div class="topbar">
-      <div class="topbar-title" id="pds-topbar-title">Project</div>
-      <div class="topbar-actions">
-        <button class="btn btn-ghost btn-sm" onclick="copyProjectContextFromDetail()">📋 Copy to Claude</button>
-        <button class="btn btn-ghost btn-sm" onclick="openProjectModal(currentDetailProjectId)">Edit</button>
-      </div>
-    </div>
     <div class="project-detail-content">
       <!-- back + title -->
       <div class="pds-header">
@@ -720,6 +713,8 @@
           <div class="pds-customer" id="pds-customer"></div>
         </div>
         <div class="pds-header-right">
+          <button class="btn btn-ghost btn-sm" onclick="copyProjectContextFromDetail()">📋 Copy to Claude</button>
+          <button class="btn btn-ghost btn-sm" onclick="openProjectModal(currentDetailProjectId)">Edit</button>
           <div id="pds-deadline-badge" style="display:none" class="pds-deadline"></div>
           <span class="status-badge" id="pds-status-badge"></span>
         </div>
@@ -1698,13 +1693,21 @@ function openTaskModal(id=null) {
 function saveTask() {
   const name=document.getElementById('task-name-input').value.trim(); if(!name){showToast('Task name required');return;}
   const tasks=DB.get('tasks');
+  const recurrence=document.getElementById('task-recurrence').value;
+  const taskTime=document.getElementById('task-time')?document.getElementById('task-time').value||'':'';
+  const daysOfWeek=recurrence==='days'
+    ?[0,1,2,3,4,5,6].filter(d=>document.getElementById(['dow-sun','dow-mon','dow-tue','dow-wed','dow-thu','dow-fri','dow-sat'][d])?.checked)
+    :[];
   const data={name,urgency:document.getElementById('task-urgency').value,due:document.getElementById('task-due').value,
-    project:document.getElementById('task-project').value,recurrence:document.getElementById('task-recurrence').value,
-    customDays:parseInt(document.getElementById('task-custom-days').value)||7,completed:false};
+    project:document.getElementById('task-project').value,recurrence,
+    customDays:parseInt(document.getElementById('task-custom-days').value)||7,
+    taskTime,daysOfWeek,completed:false};
   if(editTaskId){
     const idx=tasks.findIndex(t=>t.id===editTaskId); if(idx!==-1)tasks[idx]={...tasks[idx],...data};
   } else { tasks.unshift({id:uid(),created:today(),...data}); }
   DB.set('tasks',tasks); closeModal('task-modal'); renderTasks(); renderHome(); updateBadges();
+  if(currentPage==='project-detail') renderProjectDetail();
+  if(currentPage==='calendar') renderCalendar();
   showToast(editTaskId?'Task updated':'Task added');
 }
 
@@ -3179,7 +3182,78 @@ openTaskModal = function(id = null) {
 // Also update project task options to include project names from DB
 const _origOpenTaskModal2 = openTaskModal;
 
-// ── ONE-TIME MIGRATION: fix old short project names ──
+// ── ONE-TIME MIGRATION: add full task list from Master Todo ──
+function migrateAddMasterTasks() {
+  if (localStorage.getItem('hcc_tasks_v3')) return;
+  const existing = DB.get('tasks');
+  const existingNames = existing.map(t => t.name.toLowerCase());
+
+  const newTasks = [
+    // URGENT
+    {name:'Call Formica about payment',urgency:'high',project:'Crest Houston Launch',due:'2026-04-01',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Jayaka Cinnamon (Dr. Jalitha) — requote',urgency:'high',project:'Crest Houston Launch',due:'2026-03-31',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Everest Stone (Robert) — drayage trial follow up',urgency:'high',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'NASC (Pankaj) — waiting on ratesheet; find other truckers OR requote lane',urgency:'high',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Dragon Poly — follow up with Jack Cremmen',urgency:'high',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'International Standard Valve — check if Amey responded to LinkedIn DM',urgency:'high',project:'Crest Houston Launch',due:'2026-03-29',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    // WEEKLY RECURRING
+    {name:'News research',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'days',taskTime:'',daysOfWeek:[2,4]},
+    {name:'Newsletter',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'days',taskTime:'',daysOfWeek:[5]},
+    {name:'Prepare for Crest Next Gen meetings',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'days',taskTime:'',daysOfWeek:[5,6]},
+    {name:'Karamtara — put invoices in spreadsheet',urgency:'high',project:'Crest Houston Launch',due:'',recurrence:'daily',taskTime:'14:00',daysOfWeek:[]},
+    {name:'Plan next week using Eisenhower Matrix',urgency:'medium',project:'Personal',due:'',recurrence:'days',taskTime:'',daysOfWeek:[0]},
+    {name:'100 cold calls session',urgency:'high',project:'Crest Houston Launch',due:'',recurrence:'days',taskTime:'',daysOfWeek:[1,3,5]},
+    // ACTIVE ACCOUNTS
+    {name:'JA Warehousing — follow up',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'JA NRI — follow up',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Robust Oak Warehouse — follow up',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Robust BLT Reesport — follow up',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Palletech — get LI video to Christian',urgency:'high',project:'Palletech Partnership',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Mabroc Teas — get weekly updates from Shadwell',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'weekly',taskTime:'',daysOfWeek:[]},
+    {name:'Jascole / Hao Spice (Tim & Mei) — follow up',urgency:'high',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Danny Duran / National Pecan — follow up; ask for pecan contact list',urgency:'high',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Southern Roots Nut Co (Brandon/Chris Harrell) — follow up',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Steve (AA Paper Group) — send follow-up email; build grand slam offer',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    // HOUSTON LAUNCH
+    {name:'Get a car (reach out to Sharon)',urgency:'high',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Get car insurance',urgency:'high',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Cancel Sentra car insurance',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Find apartment in Houston',urgency:'high',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Make budget for Houston',urgency:'high',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Study Houston vessel schedules, port facts, and major commodities',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Narrow down lanes/commodities to focus on first',urgency:'high',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Make Houston sales schedule / game plan / roadmap',urgency:'high',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Join AAEI',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Join Houston Customs House Brokers and Freight Forwarders Association',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Research local trade shows in Houston — Pecans, Food, CPG',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Ask Terri about intro to American Whiskey Association contact',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    // SALES & MARKETING
+    {name:'Apollo email outreach — run free trial idea by Terri',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Build Grand Slam Offer for pecans',urgency:'high',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Build Grand Slam Offer for food exports / whiskey',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Set up email tracking extension',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Set up Google Postmaster and Streak for newsletter',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Set up meeting calendar for consultation signups',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    // LEARNING
+    {name:'Finish Coursera Business and Financial Modeling Specialization',urgency:'medium',project:'Personal',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Finish Damodaran Course',urgency:'medium',project:'Personal',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Magnus Nordmo Social Anxiety Course — complete playlist',urgency:'medium',project:'Personal',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    // PERSONAL
+    {name:'Schedule doctor for meds',urgency:'medium',project:'Personal',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Set up Parsestream trial',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Talk to Terri about E-Book edits',urgency:'low',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Develop diet plan + grocery plan for Houston',urgency:'medium',project:'Personal',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Things to get for Houston — check iPhone notes and make list',urgency:'medium',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+    {name:'Talk to Terri about making Reddit post to partner with European logistics companies',urgency:'low',project:'Crest Houston Launch',due:'',recurrence:'none',taskTime:'',daysOfWeek:[]},
+  ];
+
+  // Only add tasks that don't already exist (by name match)
+  const toAdd = newTasks.filter(t => !existingNames.includes(t.name.toLowerCase()));
+  const merged = [...existing, ...toAdd.map(t => ({id:uid(), created:today(), completed:false, ...t}))];
+  DB.set('tasks', merged);
+  localStorage.setItem('hcc_tasks_v3', '1');
+}
+
 function migrateTaskProjectNames() {
   if (localStorage.getItem('hcc_migrated_projnames')) return;
   const map = { 'Crest': 'Crest Houston Launch', 'Palletech': 'Palletech Partnership', 'CHB': 'CHB Exam Prep' };
@@ -3195,6 +3269,7 @@ function migrateTaskProjectNames() {
 // ============================================================
 function init() {
   migrateTaskProjectNames();
+  migrateAddMasterTasks();
   seedIfEmpty();
   updateCountdown();
   updateDateDisplay();
