@@ -912,14 +912,29 @@
     <div class="modal-section">
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="detail-tags"></div>
       <div class="field-grid">
-        <div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">Trade Lane</div><div style="font-size:12px" id="detail-lane">--</div></div>
-        <div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">Volume</div><div style="font-size:12px" id="detail-volume">--</div></div>
-        <div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">Phone</div><div style="font-size:12px" id="detail-phone">--</div></div>
-        <div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">Email</div><div style="font-size:12px" id="detail-email">--</div></div>
-        <div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">Preferred Contact</div><div style="font-size:12px" id="detail-pref">--</div></div>
-        <div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">Current FF</div><div style="font-size:12px" id="detail-forwarder">--</div></div>
+        <div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">Trade Lane</div><input id="detail-lane" style="font-size:12px;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);width:100%;outline:none;padding:2px 0;transition:border-color 0.15s" onfocus="this.style.borderBottomColor='var(--accent-2)'" onblur="this.style.borderBottomColor='transparent';saveAccountField('lane',this.value)"></div>
+        <div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">Volume</div><input id="detail-volume" style="font-size:12px;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);width:100%;outline:none;padding:2px 0;transition:border-color 0.15s" onfocus="this.style.borderBottomColor='var(--accent-2)'" onblur="this.style.borderBottomColor='transparent';saveAccountField('volume',this.value)"></div>
+        <div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">Phone</div><input id="detail-phone" style="font-size:12px;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);width:100%;outline:none;padding:2px 0;transition:border-color 0.15s" onfocus="this.style.borderBottomColor='var(--accent-2)'" onblur="this.style.borderBottomColor='transparent';saveAccountField('phone',this.value)"></div>
+        <div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">Email</div><input id="detail-email" style="font-size:12px;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);width:100%;outline:none;padding:2px 0;transition:border-color 0.15s" onfocus="this.style.borderBottomColor='var(--accent-2)'" onblur="this.style.borderBottomColor='transparent';saveAccountField('email',this.value)"></div>
+        <div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">Preferred Contact</div>
+          <select id="detail-pref" style="font-size:12px;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);width:100%;outline:none;padding:2px 0;transition:border-color 0.15s;cursor:pointer" onfocus="this.style.borderBottomColor='var(--accent-2)'" onblur="this.style.borderBottomColor='transparent';saveAccountField('prefContact',this.value)">
+            <option value="">--</option><option value="Phone">Phone</option><option value="Email">Email</option><option value="LinkedIn">LinkedIn</option><option value="Text">Text</option>
+          </select>
+        </div>
+        <div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">Current FF</div><input id="detail-forwarder" style="font-size:12px;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);width:100%;outline:none;padding:2px 0;transition:border-color 0.15s" onfocus="this.style.borderBottomColor='var(--accent-2)'" onblur="this.style.borderBottomColor='transparent';saveAccountField('forwarder',this.value)"></div>
+        <div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">Contact Name</div><input id="detail-contact-edit" style="font-size:12px;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);width:100%;outline:none;padding:2px 0;transition:border-color 0.15s" onfocus="this.style.borderBottomColor='var(--accent-2)'" onblur="this.style.borderBottomColor='transparent';saveAccountField('contactName',this.value)"></div>
+        <div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">Title</div><input id="detail-title-edit" style="font-size:12px;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);width:100%;outline:none;padding:2px 0;transition:border-color 0.15s" onfocus="this.style.borderBottomColor='var(--accent-2)'" onblur="this.style.borderBottomColor='transparent';saveAccountField('contactTitle',this.value)"></div>
+        <div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">Stage</div>
+          <select id="detail-stage-edit" style="font-size:12px;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);width:100%;outline:none;padding:2px 0;transition:border-color 0.15s;cursor:pointer" onfocus="this.style.borderBottomColor='var(--accent-2)'" onblur="this.style.borderBottomColor='transparent';saveAccountField('stage',this.value);openAccountDetail(currentAccountId)">
+            <option value="Target">Target</option><option value="Contacted">Contacted</option><option value="Engaged">Engaged</option><option value="Warm">Warm</option><option value="Proposal">Proposal</option><option value="Negotiating">Negotiating</option><option value="Onboarded">Onboarded</option><option value="Dormant">Dormant</option>
+          </select>
+        </div>
+        <div><div style="font-size:10px;color:var(--text-muted);margin-bottom:3px">Commodity</div><input id="detail-commodity-edit" style="font-size:12px;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);width:100%;outline:none;padding:2px 0;transition:border-color 0.15s" onfocus="this.style.borderBottomColor='var(--accent-2)'" onblur="this.style.borderBottomColor='transparent';saveAccountField('commodity',this.value)"></div>
       </div>
-      <div style="margin-top:12px" id="detail-notes-block"></div>
+      <div style="margin-top:12px">
+        <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px">Notes</div>
+        <textarea id="detail-notes-edit" placeholder="Add notes..." style="font-size:12px;color:var(--text-dim);line-height:1.5;background:var(--accent);padding:10px 12px;border-radius:7px;width:100%;min-height:80px;max-height:200px;border:1px solid transparent;outline:none;resize:vertical;font-family:var(--font-body);transition:border-color 0.15s" onfocus="this.style.borderColor='var(--accent-2)'" onblur="this.style.borderColor='transparent';saveAccountField('notes',this.value)"></textarea>
+      </div>
     </div>
     <div class="modal-section">
       <div class="modal-label" style="display:flex;justify-content:space-between;align-items:center"><span>Interaction Log</span><span class="touch-count-display" id="detail-touch-count"></span></div>
@@ -1281,7 +1296,8 @@ function navigate(page) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
-  document.querySelector('[data-page="'+page+'"]').classList.add('active');
+  const navItem=document.querySelector('[data-page="'+page+'"]');
+  if(navItem) navItem.classList.add('active');
   currentPage=page;
   if(page==='home') renderHome();
   if(page==='crm') renderAccounts();
@@ -1706,21 +1722,25 @@ function openAccountDetail(id) {
   document.getElementById('detail-company-name').textContent=a.company;
   document.getElementById('detail-contact-name').textContent=[a.contactName,a.contactTitle].filter(Boolean).join(' · ');
   document.getElementById('detail-project-tag').textContent=a.project||'Crest';
-  document.getElementById('detail-lane').textContent=a.lane||'--';
-  document.getElementById('detail-volume').textContent=a.volume?a.volume+' containers/yr':'--';
-  document.getElementById('detail-phone').textContent=a.phone||'--';
-  document.getElementById('detail-email').textContent=a.email||'--';
-  document.getElementById('detail-pref').textContent=a.prefContact||'--';
-  document.getElementById('detail-forwarder').textContent=a.forwarder||'--';
+
+  // Inline-editable fields
+  document.getElementById('detail-lane').value=a.lane||'';
+  document.getElementById('detail-volume').value=a.volume||'';
+  document.getElementById('detail-phone').value=a.phone||'';
+  document.getElementById('detail-email').value=a.email||'';
+  document.getElementById('detail-pref').value=a.prefContact||'';
+  document.getElementById('detail-forwarder').value=a.forwarder||'';
+  document.getElementById('detail-contact-edit').value=a.contactName||'';
+  document.getElementById('detail-title-edit').value=a.contactTitle||'';
+  document.getElementById('detail-stage-edit').value=a.stage||'Target';
+  document.getElementById('detail-commodity-edit').value=a.commodity||'';
+  document.getElementById('detail-notes-edit').value=a.notes||'';
 
   document.getElementById('detail-tags').innerHTML=`
     <span class="tag tag-stage">${a.stage}</span>
     ${a.commodity?`<span class="tag tag-commodity">${a.commodity}`+'</span>':''}
     ${a.project?`<span class="tag tag-project">${a.project}`+'</span>':''}
   `;
-
-  document.getElementById('detail-notes-block').innerHTML=a.notes?
-    `<div style="font-size:12px;color:var(--text-dim);line-height:1.5;background:var(--accent);padding:10px 12px;border-radius:7px;max-height:180px;overflow-y:auto;white-space:pre-wrap;word-break:break-word">${a.notes}</div>`:'';
 
   const interactions=DB.get('interactions').filter(i=>i.accountId===id).sort((a,b)=>b.date>a.date?1:-1);
   const tc=interactions.length;
@@ -1766,6 +1786,23 @@ function logInteraction() {
 }
 
 function editCurrentAccount() { closeModal('account-detail-modal'); openAccountModal(currentAccountId); }
+
+function saveAccountField(field, value) {
+  const accounts = DB.get('accounts');
+  const idx = accounts.findIndex(a => a.id === currentAccountId);
+  if (idx === -1) return;
+  accounts[idx][field] = value;
+  DB.set('accounts', accounts);
+  // Refresh the header display fields that mirror editable inputs
+  const a = accounts[idx];
+  document.getElementById('detail-company-name').textContent = a.company;
+  document.getElementById('detail-contact-name').textContent = [a.contactName, a.contactTitle].filter(Boolean).join(' · ');
+  document.getElementById('detail-tags').innerHTML = `
+    <span class="tag tag-stage">${a.stage}</span>
+    ${a.commodity ? '<span class="tag tag-commodity">' + a.commodity + '</span>' : ''}
+    ${a.project ? '<span class="tag tag-project">' + a.project + '</span>' : ''}
+  `;
+}
 
 function deleteCurrentAccount() {
   if(!confirm('Delete this account?')) return;
@@ -2884,6 +2921,10 @@ function renderProjectDetail() {
   if (!id) { navigate('projects'); return; }
   const p = DB.get('projects').find(x => x.id === id);
   if (!p) { navigate('projects'); return; }
+
+  // Reset show-completed checkbox each time a project is opened
+  const showDoneChk = document.getElementById('pds-show-completed');
+  if (showDoneChk) showDoneChk.checked = false;
 
   document.getElementById('pds-topbar-title').textContent = p.name;
   document.getElementById('pds-name').textContent = p.name;
