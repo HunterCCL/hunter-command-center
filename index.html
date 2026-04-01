@@ -639,6 +639,20 @@
         <button class="filter-btn" data-filter="low" onclick="filterTasks(this,'low')">🔵 Low</button>
         <button class="filter-btn" data-filter="recurring" onclick="filterTasks(this,'recurring')">🔄 Recurring</button>
         <button class="filter-btn" data-filter="overdue" onclick="filterTasks(this,'overdue')">⚠️ Overdue</button>
+        <select id="task-filter-project" onchange="renderTasks()" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-size:11px;padding:4px 8px;font-family:var(--font-body);cursor:pointer;outline:none">
+          <option value="">All Projects</option>
+          <option value="Crest Houston Launch">Houston Launch</option>
+          <option value="Palletech Partnership">Palletech</option>
+          <option value="CHB Exam Prep">CHB Exam</option>
+          <option value="Real Estate Houston">Real Estate</option>
+          <option value="Personal">Personal</option>
+        </select>
+        <select id="task-filter-due" onchange="renderTasks()" style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-size:11px;padding:4px 8px;font-family:var(--font-body);cursor:pointer;outline:none">
+          <option value="">Any Due Date</option>
+          <option value="today">Due Today</option>
+          <option value="week">Due This Week</option>
+          <option value="none">No Due Date</option>
+        </select>
       </div>
       <div class="tasks-list" id="tasks-list"></div>
     </div>
@@ -790,8 +804,13 @@
       <!-- LINKED TASKS -->
       <div class="pds-card pds-full">
         <div class="pds-card-header">
-          <span class="pds-card-title">Tasks</span>
-          <button class="btn btn-primary btn-sm" onclick="addTaskForProject()">+ Add Task</button>
+          <span class="pds-card-title">Tasks <span id="pds-task-count" style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);margin-left:6px"></span></span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <label style="font-size:11px;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:4px">
+              <input type="checkbox" id="pds-show-completed" onchange="renderPDSLinkedTasks(DB.get('projects').find(p=>p.id===currentDetailProjectId))" style="cursor:pointer"> Show done
+            </label>
+            <button class="btn btn-primary btn-sm" onclick="addTaskForProject()">+ Add Task</button>
+          </div>
         </div>
         <div id="pds-linked-tasks"></div>
       </div>
@@ -1701,7 +1720,7 @@ function openAccountDetail(id) {
   `;
 
   document.getElementById('detail-notes-block').innerHTML=a.notes?
-    `<div style="font-size:12px;color:var(--text-dim);line-height:1.5;background:var(--accent);padding:10px 12px;border-radius:7px">${a.notes}</div>`:'';
+    `<div style="font-size:12px;color:var(--text-dim);line-height:1.5;background:var(--accent);padding:10px 12px;border-radius:7px;max-height:180px;overflow-y:auto;white-space:pre-wrap;word-break:break-word">${a.notes}</div>`:'';
 
   const interactions=DB.get('interactions').filter(i=>i.accountId===id).sort((a,b)=>b.date>a.date?1:-1);
   const tc=interactions.length;
@@ -1793,6 +1812,21 @@ function renderTasks() {
   else if(taskFilter==='recurring') tasks=tasks.filter(t=>t.recurrence&&t.recurrence!=='none');
   else if(taskFilter==='overdue') tasks=tasks.filter(t=>isOverdue(t)&&!t.completed);
   else tasks=tasks.filter(t=>!t.completed);
+
+  // Apply project dropdown filter
+  const projSel=document.getElementById('task-filter-project');
+  if(projSel&&projSel.value) tasks=tasks.filter(t=>(t.project||'')===projSel.value);
+
+  // Apply due date dropdown filter
+  const dueSel=document.getElementById('task-filter-due');
+  if(dueSel&&dueSel.value) {
+    const todayStr=today();
+    const weekEnd=new Date(); weekEnd.setDate(weekEnd.getDate()+7);
+    const weekStr=weekEnd.toISOString().split('T')[0];
+    if(dueSel.value==='today') tasks=tasks.filter(t=>t.due&&t.due<=todayStr);
+    else if(dueSel.value==='week') tasks=tasks.filter(t=>t.due&&t.due<=weekStr);
+    else if(dueSel.value==='none') tasks=tasks.filter(t=>!t.due);
+  }
 
   tasks.sort((a,b)=>{
     if(isOverdue(a)&&!isOverdue(b))return -1; if(isOverdue(b)&&!isOverdue(a))return 1;
@@ -2954,13 +2988,22 @@ function deleteMilestone(i) {
 
 // ── LINKED TASKS ──
 function renderPDSLinkedTasks(p) {
-  const tasks = DB.get('tasks').filter(t => !t.completed && t.project === p.name);
+  if (!p) return;
+  const allTasks = DB.get('tasks').filter(t => t.project === p.name);
+  const showCompleted = document.getElementById('pds-show-completed') && document.getElementById('pds-show-completed').checked;
+  const tasks = showCompleted ? allTasks : allTasks.filter(t => !t.completed);
+  const openCount = allTasks.filter(t => !t.completed).length;
+  const doneCount = allTasks.filter(t => t.completed).length;
+  const countEl = document.getElementById('pds-task-count');
+  if (countEl) countEl.textContent = openCount + ' open' + (doneCount ? ', ' + doneCount + ' done' : '');
   const el = document.getElementById('pds-linked-tasks');
   if (!tasks.length) {
-    el.innerHTML = '<div style="font-size:11px;color:var(--text-muted);padding:4px 0">No tasks linked to this project. Add one above.</div>';
+    el.innerHTML = '<div style="font-size:11px;color:var(--text-muted);padding:4px 0">' + (allTasks.length ? 'All tasks done. Toggle "Show done" to see them.' : 'No tasks linked to this project. Add one above.') + '</div>';
     return;
   }
   tasks.sort((a, b) => {
+    if (a.completed && !b.completed) return 1;
+    if (!a.completed && b.completed) return -1;
     if (isOverdue(a) && !isOverdue(b)) return -1;
     if (isOverdue(b) && !isOverdue(a)) return 1;
     const o = {high:0,medium:1,low:2};
@@ -2968,9 +3011,10 @@ function renderPDSLinkedTasks(p) {
   });
   el.innerHTML = tasks.map(t => {
     const od = isOverdue(t);
-    return `<div class="pds-task-item" onclick="openTaskModal('${t.id}')">
-      <div class="urgency-badge ${t.urgency}">${t.urgency}</div>
-      <div class="pds-task-name">${t.name}</div>
+    return `<div class="pds-task-item" onclick="openTaskModal('${t.id}')" style="${t.completed ? 'opacity:0.45' : ''}">
+      <div class="task-check ${t.completed ? 'checked' : ''}" onclick="toggleTask('${t.id}');event.stopPropagation()" style="width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;flex-shrink:0;${t.completed ? 'background:var(--navy);border-color:var(--navy);color:white' : ''}">${t.completed ? '✓' : ''}</div>
+      <div class="urgency-badge ${t.urgency}" style="${t.completed ? 'opacity:0.5' : ''}">${t.urgency}</div>
+      <div class="pds-task-name" style="${t.completed ? 'text-decoration:line-through' : ''}">${t.name}</div>
       ${t.taskTime ? '<span style="font-family:var(--font-mono);font-size:10px;color:#4a90d9">' + t.taskTime + '</span>' : ''}
       ${t.due ? '<div class="pds-task-due ' + (od ? 'overdue' : '') + '">' + (od ? '⚠ ' : '') + formatDate(t.due) + '</div>' : ''}
     </div>`;
@@ -8570,11 +8614,25 @@ wa`, email: ``,
 // ============================================================
 // INIT
 // ============================================================
+function rolloverOverdueTasks() {
+  const todayStr = today();
+  const tasks = DB.get('tasks');
+  let changed = false;
+  tasks.forEach(t => {
+    if (!t.completed && t.due && t.due < todayStr && (!t.recurrence || t.recurrence === 'none')) {
+      t.due = todayStr;
+      changed = true;
+    }
+  });
+  if (changed) DB.set('tasks', tasks);
+}
+
 function init() {
   migrateTaskProjectNames();
   migrateAddMasterTasks();
   migrateLeadsV2();
   seedIfEmpty();
+  rolloverOverdueTasks();
   updateCountdown();
   updateDateDisplay();
   renderHome();
