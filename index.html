@@ -697,8 +697,6 @@
     </div>
   </div>
 
-</div>
-
 
   <!-- AI ASSISTANT -->
   <div id="page-ai" class="page">
@@ -744,21 +742,20 @@
 
   <!-- PROJECT DETAIL SCREEN -->
   <div id="page-project-detail" class="page">
-    <div class="project-detail-content">
-      <!-- back + title -->
-      <div class="pds-header">
-        <button class="pds-back" onclick="navigate('projects')">← Projects</button>
-        <div class="pds-title-block">
-          <div class="pds-project-name" id="pds-name"></div>
-          <div class="pds-customer" id="pds-customer"></div>
-        </div>
-        <div class="pds-header-right">
-          <button class="btn btn-ghost btn-sm" onclick="copyProjectContextFromDetail()">📋 Copy to Claude</button>
-          <button class="btn btn-ghost btn-sm" onclick="openProjectModal(currentDetailProjectId)">Edit</button>
-          <div id="pds-deadline-badge" style="display:none" class="pds-deadline"></div>
-          <span class="status-badge" id="pds-status-badge"></span>
-        </div>
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="btn btn-ghost btn-sm" onclick="navigate('projects')">← Projects</button>
+        <div style="font-family:var(--font-display);font-size:18px;font-weight:700" id="pds-topbar-title"></div>
+        <div style="font-size:12px;color:var(--text-muted)" id="pds-customer"></div>
       </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-ghost btn-sm" onclick="copyProjectContextFromDetail()">📋 Copy to Claude</button>
+        <button class="btn btn-ghost btn-sm" onclick="openProjectModal(currentDetailProjectId)">Edit</button>
+        <div id="pds-deadline-badge" style="display:none" class="pds-deadline"></div>
+        <span class="status-badge" id="pds-status-badge"></span>
+      </div>
+    </div>
+    <div class="page-content">
 
       <!-- WHERE YOU LEFT OFF -->
       <div class="where-left-off" id="pds-wlo-card">
@@ -840,6 +837,8 @@
 
     </div>
   </div>
+
+</div><!-- end #main -->
 
 
 <!-- ACCOUNT MODAL -->
@@ -2927,8 +2926,8 @@ function renderProjectDetail() {
   if (showDoneChk) showDoneChk.checked = false;
 
   document.getElementById('pds-topbar-title').textContent = p.name;
-  document.getElementById('pds-name').textContent = p.name;
-  document.getElementById('pds-customer').textContent = p.customer || '';
+  const custEl = document.getElementById('pds-customer');
+  if (custEl) custEl.textContent = p.customer || '';
   document.getElementById('pds-desc').value = p.desc || '';
   document.getElementById('pds-blocker').value = p.blocker || '';
   document.getElementById('pds-next').value = p.next || '';
@@ -3031,18 +3030,22 @@ function deleteMilestone(i) {
 function renderPDSLinkedTasks(p) {
   if (!p) return;
   const allTasks = DB.get('tasks').filter(t => t.project === p.name);
-  const showCompleted = document.getElementById('pds-show-completed') && document.getElementById('pds-show-completed').checked;
-  const tasks = showCompleted ? allTasks : allTasks.filter(t => !t.completed);
+  const showDoneChk = document.getElementById('pds-show-completed');
+  const showCompleted = showDoneChk ? showDoneChk.checked : false;
+  const displayTasks = showCompleted ? allTasks : allTasks.filter(t => !t.completed);
   const openCount = allTasks.filter(t => !t.completed).length;
   const doneCount = allTasks.filter(t => t.completed).length;
   const countEl = document.getElementById('pds-task-count');
   if (countEl) countEl.textContent = openCount + ' open' + (doneCount ? ', ' + doneCount + ' done' : '');
   const el = document.getElementById('pds-linked-tasks');
-  if (!tasks.length) {
-    el.innerHTML = '<div style="font-size:11px;color:var(--text-muted);padding:4px 0">' + (allTasks.length ? 'All tasks done. Toggle "Show done" to see them.' : 'No tasks linked to this project. Add one above.') + '</div>';
+  if (!el) return;
+  if (!displayTasks.length) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--text-muted);padding:8px 0">' +
+      (allTasks.length && !showCompleted ? 'All tasks done! Check "Show done" to see them.' : 'No tasks linked to this project yet. Add one above.') +
+      '</div>';
     return;
   }
-  tasks.sort((a, b) => {
+  displayTasks.sort((a, b) => {
     if (a.completed && !b.completed) return 1;
     if (!a.completed && b.completed) return -1;
     if (isOverdue(a) && !isOverdue(b)) return -1;
@@ -3050,16 +3053,31 @@ function renderPDSLinkedTasks(p) {
     const o = {high:0,medium:1,low:2};
     return (o[a.urgency]||1) - (o[b.urgency]||1);
   });
-  el.innerHTML = tasks.map(t => {
+  el.innerHTML = displayTasks.map(t => {
     const od = isOverdue(t);
-    return `<div class="pds-task-item" onclick="openTaskModal('${t.id}')" style="${t.completed ? 'opacity:0.45' : ''}">
-      <div class="task-check ${t.completed ? 'checked' : ''}" onclick="toggleTask('${t.id}');event.stopPropagation()" style="width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;flex-shrink:0;${t.completed ? 'background:var(--navy);border-color:var(--navy);color:white' : ''}">${t.completed ? '✓' : ''}</div>
-      <div class="urgency-badge ${t.urgency}" style="${t.completed ? 'opacity:0.5' : ''}">${t.urgency}</div>
+    return `<div class="pds-task-item" style="${t.completed ? 'opacity:0.45' : ''};cursor:pointer" onclick="openTaskModal('${t.id}')">
+      <div onclick="togglePDSTask('${t.id}');event.stopPropagation()" style="width:16px;height:16px;border-radius:4px;border:1.5px solid ${t.completed ? 'var(--navy)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;flex-shrink:0;background:${t.completed ? 'var(--navy)' : 'transparent'};color:white">${t.completed ? '✓' : ''}</div>
+      <div class="urgency-badge ${t.urgency}">${t.urgency}</div>
       <div class="pds-task-name" style="${t.completed ? 'text-decoration:line-through' : ''}">${t.name}</div>
-      ${t.taskTime ? '<span style="font-family:var(--font-mono);font-size:10px;color:#4a90d9">' + t.taskTime + '</span>' : ''}
       ${t.due ? '<div class="pds-task-due ' + (od ? 'overdue' : '') + '">' + (od ? '⚠ ' : '') + formatDate(t.due) + '</div>' : ''}
     </div>`;
   }).join('');
+}
+
+function togglePDSTask(id) {
+  const tasks = DB.get('tasks');
+  const idx = tasks.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  if (tasks[idx].recurrence && tasks[idx].recurrence !== 'none') {
+    tasks[idx].due = nextRecurrenceDate(tasks[idx]);
+    showToast('Done — next due: ' + formatDate(tasks[idx].due));
+  } else {
+    tasks[idx].completed = !tasks[idx].completed;
+  }
+  DB.set('tasks', tasks);
+  const p = DB.get('projects').find(x => x.id === currentDetailProjectId);
+  renderPDSLinkedTasks(p);
+  updateBadges();
 }
 
 function addTaskForProject() {
