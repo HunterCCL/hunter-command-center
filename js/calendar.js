@@ -96,8 +96,14 @@ function renderDayView() {
 }
 
 function calToggleTask(id) {
+  const before = DB.get('tasks').find(t => t.id === id);
+  console.log('[calToggleTask] before due:', before ? before.due : 'task not found', '| recurrence:', before ? before.recurrence : '');
   toggleTask(id);
+  const after = DB.get('tasks').find(t => t.id === id);
+  console.log('[calToggleTask] after due:', after ? after.due : 'task not found (completed+removed?)');
   renderCalendar();
+  const todayStr = today();
+  console.log('[calToggleTask] getTasksForDate(today) after re-render:', getTasksForDate(todayStr).map(t => t.id + ' | due:' + t.due + ' | rec:' + t.recurrence));
 }
 
 function renderDayTask(t) {
