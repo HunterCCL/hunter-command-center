@@ -104,6 +104,7 @@ function nextRecurrenceDate(task) {
   if(task.recurrence==='daily') base.setDate(base.getDate()+1);
   else if(task.recurrence==='weekly') base.setDate(base.getDate()+7);
   else if(task.recurrence==='mwf'){ do{base.setDate(base.getDate()+1);}while(![1,3,5].includes(base.getDay())); }
+  else if(task.recurrence==='days'&&task.daysOfWeek&&task.daysOfWeek.length){ do{base.setDate(base.getDate()+1);}while(!task.daysOfWeek.includes(base.getDay())); }
   else if(task.recurrence==='custom') base.setDate(base.getDate()+(task.customDays||7));
   return base.toISOString().split('T')[0];
 }
