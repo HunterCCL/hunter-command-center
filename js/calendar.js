@@ -45,14 +45,14 @@ function getTasksForDate(dateStr) {
   const tasks = DB.get('tasks').filter(t => !t.completed);
   return tasks.filter(t => {
     if (t.due === dateStr) return true;
-    if (t.recurrence === 'daily') return true;
+    if (t.recurrence === 'daily') return t.due ? dateStr >= t.due : true;
     if (t.recurrence === 'mwf') {
       const dow = new Date(dateStr + 'T00:00:00').getDay();
-      return [1,3,5].includes(dow);
+      return [1,3,5].includes(dow) && (!t.due || dateStr >= t.due);
     }
     if (t.recurrence === 'days' && t.daysOfWeek && t.daysOfWeek.length) {
       const dow = new Date(dateStr + 'T00:00:00').getDay();
-      return t.daysOfWeek.includes(dow);
+      return t.daysOfWeek.includes(dow) && (!t.due || dateStr >= t.due);
     }
     if (t.recurrence === 'weekly' && t.due) {
       // Show on same day of week going forward
