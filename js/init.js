@@ -229,6 +229,9 @@ function init() {
   checkHabitNudge();
   updateBadges();
   setInterval(updateCountdown,60000);
+  if (localStorage.getItem('hcc_goog_token') && localStorage.getItem('hcc_goog_client_id')) {
+    setSyncStatus('connected', 'Reconnecting...');
+  }
   loadGoogleLibs();
 }
 

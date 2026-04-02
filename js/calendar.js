@@ -95,11 +95,17 @@ function renderDayView() {
   document.getElementById('cal-view-day').innerHTML = html;
 }
 
+function calToggleTask(id) {
+  toggleTask(id);
+  renderCalendar();
+}
+
 function renderDayTask(t) {
   const od = isOverdue(t);
-  return `<div class="day-task-item" onclick="openTaskModal('${t.id}')">
+  return `<div class="day-task-item">
+    <div class="task-check" onclick="calToggleTask('${t.id}')"></div>
     ${t.taskTime ? '<div class="day-task-time">' + fmtTime(t.taskTime) + '</div>' : '<div class="day-task-time" style="color:var(--text-muted)">--:--</div>'}
-    <div class="day-task-info">
+    <div class="day-task-info" onclick="openTaskModal('${t.id}')" style="flex:1;cursor:pointer">
       <div class="day-task-name">${t.name}</div>
       <div class="day-task-meta">
         <span class="urgency-badge ${t.urgency}">${t.urgency}</span>
@@ -201,9 +207,10 @@ function renderMonthView() {
   html += `<div class="month-side-panel">
     <h4>${new Date(panelDate+'T00:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</h4>
     ${panelTasks.length
-      ? panelTasks.map(t => `<div class="pds-task-item" onclick="openTaskModal('${t.id}')" style="margin-bottom:6px">
+      ? panelTasks.map(t => `<div class="pds-task-item" style="margin-bottom:6px;display:flex;align-items:center;gap:8px">
+          <div class="task-check" onclick="calToggleTask('${t.id}')"></div>
           <div class="urgency-badge ${t.urgency}" style="font-size:8px">${t.urgency[0].toUpperCase()}</div>
-          <div class="pds-task-name" style="font-size:11px">${t.name}</div>
+          <div class="pds-task-name" style="font-size:11px;cursor:pointer" onclick="openTaskModal('${t.id}')">${t.name}</div>
         </div>`).join('')
       : '<div style="font-size:11px;color:var(--text-muted)">Nothing scheduled</div>'
     }
