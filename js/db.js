@@ -72,6 +72,7 @@ function setSyncStatus(status, msg) {
   const label = document.getElementById('sync-btn-label');
   const statusText = document.getElementById('sync-status-text');
   const disconnect = document.getElementById('sync-disconnect');
+  const restoreBtn = document.getElementById('restore-btn');
 
   btn.className = 'sync-btn';
   dot.className = 'sync-dot';
@@ -80,21 +81,25 @@ function setSyncStatus(status, msg) {
     dot.classList.add('blue'); label.textContent = 'Connect Google';
     statusText.textContent = msg || 'Data stored locally';
     disconnect.style.display = 'none';
+    restoreBtn.style.display = 'none';
   } else if (status === 'connected') {
     btn.classList.add('connected'); dot.classList.add('green');
     label.textContent = 'Sheets Synced';
     statusText.textContent = msg || 'Last sync: just now';
     disconnect.style.display = 'block';
+    restoreBtn.style.display = 'block';
   } else if (status === 'syncing') {
     btn.classList.add('syncing'); dot.classList.add('amber');
     label.textContent = 'Syncing...';
     statusText.textContent = msg || 'Writing to Sheets...';
     disconnect.style.display = 'block';
+    restoreBtn.style.display = 'block';
   } else if (status === 'error') {
     btn.classList.add('error'); dot.classList.add('red');
     label.textContent = 'Sync Error';
     statusText.textContent = msg || 'Check connection';
     disconnect.style.display = 'block';
+    restoreBtn.style.display = 'block';
   }
 }
 
@@ -278,5 +283,78 @@ DB.set = function(k, v) {
   _originalSet(k, v);
   scheduleSyncToSheets();
 };
+
+async function restoreFromSheets() {
+  if (!gapiReady || !gapi.client.getToken()) {
+    showToast('Connect to Google Sheets first');
+    return;
+  }
+  if (!confirm('RESTORE FROM SHEETS\n\nThis will replace all local data (accounts, interactions, tasks, projects) with data from Google Sheets.\n\nNote: priority flags, tags, and sourceTab are not stored in Sheets and will not be restored.\n\nThis cannot be undone. Continue?')) return;
+
+  const btn = document.getElementById('restore-btn');
+  btn.disabled = true;
+  btn.textContent = 'Restoring...';
+  setSyncStatus('syncing', 'Restoring from Sheets...');
+
+  try {
+    const readTab = async (tab) => {
+      const resp = await gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId: SHEETS_CONFIG.SHEET_ID,
+        range: tab,
+      });
+      return resp.result.values || [];
+    };
+
+    const rowsToObjects = (rows) => {
+      if (rows.length < 2) return [];
+      const headers = rows[0];
+      return rows.slice(1).map(row => {
+        const obj = {};
+        headers.forEach((h, i) => { obj[h] = row[i] !== undefined ? row[i] : ''; });
+        return obj;
+      });
+    };
+
+    const [contactRows, interactionRows, taskRows, projectRows] = await Promise.all([
+      readTab('Contacts'),
+      readTab('Interactions'),
+      readTab('Tasks'),
+      readTab('Projects'),
+    ]);
+
+    const accounts = rowsToObjects(contactRows);
+
+    const interactions = rowsToObjects(interactionRows);
+
+    const tasks = rowsToObjects(taskRows).map(t => ({
+      ...t,
+      completed: t.completed === 'TRUE',
+    }));
+
+    const projects = rowsToObjects(projectRows).map(p => ({
+      ...p,
+      notes: (() => { try { return JSON.parse(p.notes); } catch(e) { return []; } })(),
+      milestones: [],
+    }));
+
+    // Write directly via _originalSet — bypasses the sync patch so we don't
+    // immediately write back to Sheets and undo the restore.
+    _originalSet('accounts', accounts);
+    _originalSet('interactions', interactions);
+    _originalSet('tasks', tasks);
+    _originalSet('projects', projects);
+
+    const counts = `${accounts.length} accounts, ${interactions.length} interactions, ${tasks.length} tasks, ${projects.length} projects`;
+    console.log('Restore complete:', counts);
+    showToast('Restored ' + counts + ' — reloading...');
+    setTimeout(() => window.location.reload(), 1500);
+  } catch(e) {
+    console.error('Restore error:', e);
+    setSyncStatus('error', 'Restore failed — check console');
+    showToast('Restore failed');
+    btn.disabled = false;
+    btn.textContent = 'Restore from Sheets';
+  }
+}
 
 
