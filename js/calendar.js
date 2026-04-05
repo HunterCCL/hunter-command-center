@@ -66,7 +66,7 @@ function getTasksForDate(dateStr) {
 
 function renderDayView() {
   const d = calDate;
-  const dateStr = d.toISOString().split('T')[0];
+  const dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   const isToday = dateStr === today();
 
   document.getElementById('cal-nav-title').textContent = d.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
@@ -145,7 +145,7 @@ function renderWeekView() {
   const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   let html = '<div class="week-grid">';
   days.forEach((day, i) => {
-    const dateStr = day.toISOString().split('T')[0];
+    const dateStr = day.getFullYear() + '-' + String(day.getMonth()+1).padStart(2,'0') + '-' + String(day.getDate()).padStart(2,'0');
     const isToday = dateStr === today();
     const tasks = getTasksForDate(dateStr).slice(0, 5);
     const extra = getTasksForDate(dateStr).length - 5;
