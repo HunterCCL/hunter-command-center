@@ -78,6 +78,7 @@ function renderTasks() {
           ${t.project?`<span class="task-meta-item">${t.project}</span>`:''}
           ${t.due?`<span class="task-meta-item ${dueClass}">${dueLabel}</span>`:''}
           ${t.recurrence&&t.recurrence!=='none'?`<span class="recurring-badge">🔄 ${t.recurrence}</span>`:''}
+          ${(t.tags||'').split(',').map(s=>s.trim()).includes('followup')?`<span class="followup-badge">followup</span>`:''}
         </div>
       </div>
       <div class="task-actions">
@@ -94,7 +95,12 @@ function toggleTask(id) {
     tasks[idx].due=nextRecurrenceDate(tasks[idx]);
     showToast('Done — next due: '+formatDate(tasks[idx].due));
   } else { tasks[idx].completed=!tasks[idx].completed; }
-  DB.set('tasks',tasks); renderTasks(); renderHome(); updateBadges();
+  DB.set('tasks',tasks);
+  // Additive: linked follow-up task completion — only fires when accountId + followup tag present
+  if(tasks[idx].completed && tasks[idx].accountId && (tasks[idx].tags||'').split(',').map(s=>s.trim()).includes('followup')){
+    completeFollowupTask(tasks[idx]);
+  }
+  renderTasks(); renderHome(); updateBadges();
 }
 
 function nextRecurrenceDate(task) {

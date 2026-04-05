@@ -19,6 +19,7 @@ function navigate(page) {
   if(page==='calendar') initCalendar();
   if(page==='project-detail') renderProjectDetail();
   if(page==='ai') initAIPage();
+  if(page==='followups') renderFollowups();
   updateBadges();
 }
 
@@ -34,6 +35,7 @@ function updateBadges() {
   document.getElementById('crm-badge').textContent=accounts.length;
   const projects=DB.get('projects').filter(p=>p.status!=='done');
   document.getElementById('projects-badge').textContent=projects.length;
+  updateFollowupBadges();
 }
 
 function updateCountdown() {
@@ -49,7 +51,7 @@ function updateDateDisplay() {
 // ============================================================
 // HOME
 // ============================================================
-function renderHome() { renderTop3(); renderKPIs(); renderHomeTasks(); checkHabitNudge(); }
+function renderHome() { renderTop3(); renderKPIs(); renderHomeTasks(); checkHabitNudge(); renderFollowupSummaryCard(); }
 
 function renderTop3() {
   const grid=document.getElementById('top3-grid');

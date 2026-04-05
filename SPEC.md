@@ -196,6 +196,7 @@ hunter-command-center/
 │   ├── tasks.js             ← tasks, recurring, urgency, filters
 │   ├── projects.js          ← projects, milestones, project detail
 │   ├── calendar.js          ← day/week/month views
+│   ├── followups.js         ← follow-up dashboard, linked task sync, bucket logic
 │   ├── ai.js                ← Gemini, briefings, call prep
 │   └── init.js              ← boot sequence, migrations, seeds
 └── data/
@@ -305,6 +306,7 @@ The app is architected to migrate cleanly to this stack when needed:
 | Tags | Working | Free-form tags on accounts, shown as purple chips, filterable |
 | Lists | Working | Named lists, create/delete, assign accounts via edit modal, filter by list |
 | Filter row | Working | Source, List, and Tag dropdowns below pipeline tabs |
+| Follow-up Dashboard | Not built | See Section 8.1 for full spec |
 
 ### 3.2 Migration State
 
@@ -343,6 +345,7 @@ The app is architected to migrate cleanly to this stack when needed:
   prefContact: '',     // Phone | Email | LinkedIn | Text
   notes: '',
   lastContacted: null, // YYYY-MM-DD
+  followupDate: null,  // YYYY-MM-DD — explicit follow-up date; when set, auto-creates a linked task tagged 'followup'
   created: '',         // YYYY-MM-DD
 }
 ```
@@ -360,6 +363,8 @@ The app is architected to migrate cleanly to this stack when needed:
   customDays: '',      // integer, used when recurrence = custom
   daysOfWeek: [],      // array of integers 0-6, used when recurrence = days
   taskTime: '',        // HH:MM optional
+  tags: '',            // comma-separated tags e.g. 'followup'
+  accountId: '',       // references account.id — set when task is auto-created from a follow-up date
   completed: false,
   created: '',         // YYYY-MM-DD
 }
@@ -501,7 +506,7 @@ Install GitHub Desktop. Clone repo locally. Install Claude Code. Point Claude Co
 Split the current single `index.html` into the file structure in Section 2.2. Nothing new gets added — everything just gets reorganized. Enforce Architecture Rules throughout. After this session, all future builds are surgical edits to individual files.
 
 **Session 3 — Follow-up Dashboard (Section 8.1)**
-Highest ROI feature. Three buckets: Overdue, Due This Week, Coming Up. Quick action buttons inline. Home screen summary card. This is what turns 354 accounts from a list into a sales engine.
+Highest ROI feature. Three buckets: Overdue, Due This Week, Coming Up. Quick action buttons inline. Home screen summary card. Cross-module sync: setting a follow-up date auto-creates a linked calendar task; checking it off logs the interaction and clears the date. This is what turns 354 accounts from a list into a sales engine.
 
 **Session 4 — Call Prep fixes (Section 8.3)**
 Fix modal stacking bug. Wire AI generation to Gemini. Make Live Call questions stage-aware.
@@ -676,27 +681,53 @@ All three niches share the same positioning: **Houston's food logistics speciali
 
 ## SECTION 8 — PLANNED FEATURES (not yet built)
 
-### 8.1 Follow-up Dashboard ("Pipeline Actions")
+### 8.1 Follow-up Dashboard — Full Spec
 
-A dedicated screen accessible from the sidebar nav AND a summary card on the home screen.
+#### Where it lives
 
-**Sidebar screen — full view:**
-Three buckets displayed in order:
-- **Overdue** — follow-up date passed or contact cadence breached for their tier
-- **Due today/this week** — accounts where next contact window is now
-- **Coming up** — next 2 weeks
+- **Sidebar nav item** between Projects and AI Assistant: label "Follow-ups", red badge showing total overdue count
+- **Tab inside the Accounts page** alongside Priority, All, Target, etc. — label "Follow-ups"
+- **Summary card on the home Command Center screen** showing overdue count + link to the dashboard
 
-Each row shows:
+#### Three buckets
+
+1. **Overdue** — follow-up date is past, OR no contact in 14+ days and stage is Target / Contacted / Engaged / Warm
+2. **Due This Week** — follow-up date falls within the next 7 days
+3. **Coming Up** — follow-up date is 8-30 days out, OR no contact in 7-14 days
+
+#### Each account row shows
+
 - Company name + contact name
-- Niche tag (Food Imports / Pecan Exports / CPG Food Exports)
-- Account tier (Tier 1 / Tier 2 / Slow Burn / Quarterly)
-- Days since last touch
-- Manually set next action (what Hunter wrote when logging last interaction)
-- AI-suggested contact method + one-line reason
-- Quick action buttons inline: Log Call / Send Email / Log Note — without opening the account
+- Stage chip
+- Last contacted date (or "Never")
+- Reason it appears ("Follow-up due" or "No contact in X days")
+- Four inline action buttons: Open Detail / Log Interaction / Call Prep / Set Follow-up Date
 
-**Home screen summary card:**
-Simple count only — "7 accounts need action today." Tapping navigates to the full dashboard.
+#### Cross-module sync rules
+
+When a follow-up date is set on an account (from any screen):
+- Auto-create a linked task: name = "Follow up with [Company]", due = followupDate, urgency = Medium, project = "Crest Houston Launch", tags = "followup", accountId = account.id
+- That task appears on the calendar day view and week view like any other task
+- That task appears in Urgent Tasks on the home Command Center
+
+When the linked task is checked off:
+- Log an interaction on the account: type = Note, notes = "Follow-up completed", date = today
+- Clear account.followupDate (set to null)
+- Delete the linked task
+
+When followupDate is updated on the account:
+- Find the existing linked task (query by accountId + tags containing "followup")
+- Update its due date to match the new followupDate
+
+Tasks tagged "followup" are visually distinct: small "followup" chip displayed on the task row in all views.
+
+#### Architecture constraints
+
+- `db.js` is the only file that touches storage — all follow-up logic calls `DB.get()` / `DB.set()` only
+- Render functions only build HTML — bucket logic lives in pure functions in `followups.js`
+- `followupDate` on accounts is documented in Section 3.3 (done)
+- `tags` and `accountId` on tasks are documented in Section 3.4 (done)
+- The linked task relationship is queryable in both directions: account.followupDate links out, task.accountId links back
 
 ### 8.2 Smart Next Move on Account Detail
 
@@ -747,6 +778,20 @@ Tasks are created automatically but Hunter can edit or delete them.
 ---
 
 ## CHANGELOG
+
+### April 4, 2026 — Spec v6.1
+- Added `followupDate` field to Account Data Model (Section 3.3)
+- Added `tags` and `accountId` fields to Task Data Model (Section 3.4)
+- Added `followups.js` to file structure (Section 2.2)
+- Added Follow-up Dashboard to build state table (Section 3.1) as Not Built
+- Replaced Section 8.1 placeholder with full Follow-up Dashboard spec including three buckets, row fields, cross-module sync rules, and architecture constraints
+- Updated Session 3 roadmap description to reflect full spec scope
+
+### April 4, 2026 — Bug fixes
+- Fixed priority, tags, sourceTab missing from Google Sheets sync (db.js)
+- Fixed taskTime and daysOfWeek missing from Google Sheets Tasks sync (db.js)
+- Fixed nextRecurrenceDate for recurrence type 'days' not advancing due date (tasks.js)
+- Fixed recurring 'days' tasks rendering one day early in calendar day/week views due to toISOString() UTC shift (calendar.js)
 
 ### April 1, 2026 — Spec v6.0
 - Added Architecture Rules section (5 non-negotiable rules governing all future development)

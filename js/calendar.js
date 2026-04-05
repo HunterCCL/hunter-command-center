@@ -111,6 +111,7 @@ function renderDayTask(t) {
         <span class="urgency-badge ${t.urgency}">${t.urgency}</span>
         ${t.project ? '<span class="task-meta-item">' + t.project + '</span>' : ''}
         ${t.recurrence && t.recurrence !== 'none' ? '<span class="recurring-badge">🔄</span>' : ''}
+        ${(t.tags||'').split(',').map(s=>s.trim()).includes('followup') ? '<span class="followup-badge">followup</span>' : ''}
       </div>
     </div>
     ${od ? '<span style="color:var(--hot);font-size:11px">Overdue</span>' : ''}

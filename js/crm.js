@@ -35,6 +35,9 @@ function renderAccounts() {
   });
   const prioEl=document.getElementById('count-Priority');
   if(prioEl) prioEl.textContent=accounts.filter(a=>a.priority).length;
+  const fuCountEl=document.getElementById('count-Followups');
+  if(fuCountEl){ const b=getFollowupBuckets(); fuCountEl.textContent=b.overdue.length+b.dueThisWeek.length+b.comingUp.length; }
+  if(currentStageFilter==='Followups'){ renderFollowupsInAccounts(); return; }
 
   // Populate source dropdown
   const sourceSel=document.getElementById('filter-source');
@@ -305,15 +308,16 @@ function logInteraction() {
   DB.set('interactions',interactions);
   const accounts=DB.get('accounts');
   const idx=accounts.findIndex(a=>a.id===currentAccountId);
-  if(idx!==-1){accounts[idx].lastContacted=today();DB.set('accounts',accounts);}
+  if(idx!==-1){
+    accounts[idx].lastContacted=today();
+    if(followupDate) accounts[idx].followupDate=followupDate;
+    DB.set('accounts',accounts);
+  }
   if(followupDate){
-    const account=accounts[idx];
-    const tasks=DB.get('tasks');
-    tasks.push({id:uid(),name:'Follow up: '+(account?.company||'Account'),urgency:'medium',project:account?.project||'Crest',due:followupDate,recurrence:'none',completed:false,created:today()});
-    DB.set('tasks',tasks);
-    showToast('Logged + follow-up task created');
+    syncFollowupTask(currentAccountId,followupDate);
+    showToast('Logged + follow-up date set');
   } else { showToast('Interaction logged'); }
-  openAccountDetail(currentAccountId); updateBadges();
+  openAccountDetail(currentAccountId); updateBadges(); updateFollowupBadges();
 }
 
 function editCurrentAccount() { closeModal('account-detail-modal'); openAccountModal(currentAccountId); }

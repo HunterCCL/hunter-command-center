@@ -214,6 +214,7 @@
   .urgency-badge.medium { background: rgba(255,165,2,0.12); color: var(--medium); }
   .urgency-badge.low { background: rgba(84,160,255,0.12); color: var(--low); }
   .recurring-badge { font-size: 9px; font-family: var(--font-mono); padding: 2px 6px; border-radius: 3px; background: rgba(46,213,115,0.1); color: var(--cold); }
+  .followup-badge { font-size: 9px; font-family: var(--font-mono); padding: 2px 6px; border-radius: 3px; background: rgba(74,144,217,0.12); color: #4a90d9; }
   .task-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
   .task-item:hover .task-actions { opacity: 1; }
   .task-action-btn { background: transparent; border: 1px solid var(--border); border-radius: 4px; color: var(--text-muted); cursor: pointer; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 11px; transition: all 0.15s; font-family: var(--font-body); }
