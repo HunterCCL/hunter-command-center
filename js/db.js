@@ -215,8 +215,8 @@ async function syncAllToSheets() {
     const kpis = DB.getObj('kpis');
 
     await writeSheet('Contacts', [
-      ['id','company','contactName','contactTitle','phone','email','linkedin','prefContact','stage','commodity','lane','volume','project','forwarder','referral','notes','lastContacted','created'],
-      ...accounts.map(a=>[a.id,a.company,a.contactName||'',a.contactTitle||'',a.phone||'',a.email||'',a.linkedin||'',a.prefContact||'',a.stage,a.commodity||'',a.lane||'',a.volume||'',a.project||'',a.forwarder||'',a.referral||'',a.notes||'',a.lastContacted||'',a.created||''])
+      ['id','company','contactName','contactTitle','phone','email','linkedin','prefContact','stage','commodity','lane','volume','project','forwarder','referral','notes','lastContacted','created','priority','tags','sourceTab'],
+      ...accounts.map(a=>[a.id,a.company,a.contactName||'',a.contactTitle||'',a.phone||'',a.email||'',a.linkedin||'',a.prefContact||'',a.stage,a.commodity||'',a.lane||'',a.volume||'',a.project||'',a.forwarder||'',a.referral||'',a.notes||'',a.lastContacted||'',a.created||'',a.priority?'TRUE':'FALSE',a.tags||'',a.sourceTab||''])
     ]);
 
     await writeSheet('Interactions', [
@@ -225,8 +225,8 @@ async function syncAllToSheets() {
     ]);
 
     await writeSheet('Tasks', [
-      ['id','name','urgency','project','due','recurrence','customDays','completed','created'],
-      ...tasks.map(t=>[t.id,t.name,t.urgency,t.project||'',t.due||'',t.recurrence||'none',t.customDays||'',t.completed?'TRUE':'FALSE',t.created||''])
+      ['id','name','urgency','project','due','recurrence','customDays','completed','created','taskTime','daysOfWeek'],
+      ...tasks.map(t=>[t.id,t.name,t.urgency,t.project||'',t.due||'',t.recurrence||'none',t.customDays||'',t.completed?'TRUE':'FALSE',t.created||'',t.taskTime||'',JSON.stringify(t.daysOfWeek||[])])
     ]);
 
     await writeSheet('Projects', [
@@ -289,7 +289,7 @@ async function restoreFromSheets() {
     showToast('Connect to Google Sheets first');
     return;
   }
-  if (!confirm('RESTORE FROM SHEETS\n\nThis will replace all local data (accounts, interactions, tasks, projects) with data from Google Sheets.\n\nNote: priority flags, tags, and sourceTab are not stored in Sheets and will not be restored.\n\nThis cannot be undone. Continue?')) return;
+  if (!confirm('RESTORE FROM SHEETS\n\nThis will replace all local data (accounts, interactions, tasks, projects) with data from Google Sheets.\n\nThis cannot be undone. Continue?')) return;
 
   const btn = document.getElementById('restore-btn');
   btn.disabled = true;
@@ -322,13 +322,18 @@ async function restoreFromSheets() {
       readTab('Projects'),
     ]);
 
-    const accounts = rowsToObjects(contactRows);
+    const accounts = rowsToObjects(contactRows).map(a => ({
+      ...a,
+      priority: a.priority === 'TRUE',
+    }));
 
     const interactions = rowsToObjects(interactionRows);
 
     const tasks = rowsToObjects(taskRows).map(t => ({
       ...t,
       completed: t.completed === 'TRUE',
+      customDays: t.customDays ? parseInt(t.customDays) : 7,
+      daysOfWeek: (() => { try { return JSON.parse(t.daysOfWeek||'[]'); } catch(e) { return []; } })(),
     }));
 
     const projects = rowsToObjects(projectRows).map(p => ({
