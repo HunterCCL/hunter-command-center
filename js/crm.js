@@ -297,6 +297,7 @@ function openAccountDetail(id) {
 
   if(tc<10&&a.stage==='Dormant') showToast('Only '+tc+' touches — too early to mark dormant?');
   openModal('account-detail-modal');
+  document.getElementById('account-tasks-section').innerHTML=renderAccountTasks(id);
 }
 
 function logInteraction() {

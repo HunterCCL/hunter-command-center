@@ -1,5 +1,5 @@
-# HUNTER'S COMMAND CENTER — SPEC v6.0
-*Last updated: April 1, 2026*
+# HUNTER'S COMMAND CENTER — SPEC v6.2
+*Last updated: April 5, 2026*
 *This is the single source of truth for the app. Claude reads this at the start of every session before touching any code.*
 
 ---
@@ -307,6 +307,7 @@ The app is architected to migrate cleanly to this stack when needed:
 | Lists | Working | Named lists, create/delete, assign accounts via edit modal, filter by list |
 | Filter row | Working | Source, List, and Tag dropdowns below pipeline tabs |
 | Follow-up Dashboard | Not built | See Section 8.1 for full spec |
+| Account-Linked Tasks | Not built | See Section 8.6 for full spec |
 
 ### 3.2 Migration State
 
@@ -775,9 +776,81 @@ Logic:
 
 Tasks are created automatically but Hunter can edit or delete them.
 
+### 8.6 Account-Linked Tasks
+
+Allows tasks to be manually linked to accounts from the task modal, and shows those tasks directly on the account detail modal.
+
+`task.accountId` already exists in the data model (Section 3.4). No new fields are needed.
+
+#### Task Modal — Account Typeahead Field
+
+A new optional "Account" field is added to the task create/edit form in `index.html` and wired up in `tasks.js`.
+
+**Behavior:**
+- Field is blank by default. It is optional on all tasks.
+- User types 3 or more characters into the input. A dropdown appears showing up to 6 matching accounts, matched against `account.company` (case-insensitive substring match).
+- If fewer than 3 characters are typed, no dropdown appears.
+- User clicks a result to select it. The input is replaced by a removable chip showing the company name. `task.accountId` is set to that account's `id`.
+- The chip has an X button. Clicking X clears the selection and restores the empty input. `task.accountId` is set back to `''`.
+- When editing an existing task that already has an `accountId`, the chip is pre-populated with the linked account's company name.
+
+**Architecture:**
+- Account lookup is a pure logic function in `tasks.js`: `getAccountMatches(query)` — takes a string, returns up to 6 accounts from `DB.get('accounts')` matching the company name. No HTML. No side effects.
+- The typeahead dropdown and chip are rendered by a dedicated render function. No filtering or matching happens inside a render function.
+
+#### Account Detail Modal — Tasks Section
+
+A Tasks section is added to the account detail modal in `index.html` (markup) and `crm.js` (wiring), below the interaction log.
+
+**What it shows:**
+- All tasks where `task.accountId === account.id`, excluding any task where `task.tags` contains `'followup'`.
+- If no matching tasks, shows a single line: "No tasks linked to this account."
+- Each task row shows:
+  - Task name
+  - Due date (formatted as `MMM D` e.g. "Apr 12", or "No due date" if blank)
+  - Urgency chip (`--hot` / `--warm` / `--cold` per urgency level)
+  - Checkbox — checking it calls `toggleTask(task.id)` then re-renders only the tasks section inline (does not close or re-open the modal)
+
+**Quick-add field (below the task list):**
+- A single-line input for task name and an "Add" button.
+- Pressing Add or Enter creates a new task with: `urgency = 'medium'`, `accountId = account.id`, `due = ''`, `tags = ''`, `recurrence = 'none'`, `name = input value`. Does not open the task modal.
+- After creation, the tasks section re-renders inline. The input clears.
+- Empty task name input is a no-op (no task created, no error).
+- All task creation goes through `DB.get` / `DB.set` per Architecture Rule 1. No direct localStorage access.
+
+#### tasks.js — renderAccountTasks(accountId)
+
+A pure render function added to `tasks.js`.
+
+**Signature:** `renderAccountTasks(accountId)` — returns an HTML string.
+
+**Rules:**
+- Calls a separate logic function (e.g. `getTasksForAccount(accountId)`) that does the filtering: `DB.get('tasks').filter(t => t.accountId === accountId && !t.completed && !t.tags.split(',').map(s => s.trim()).includes('followup'))`.
+- `renderAccountTasks` only builds and returns HTML. No filtering, no DB calls inside the render function itself.
+- Checkbox `onclick` calls `toggleTask(task.id)` then re-renders the section: `document.getElementById('account-tasks-section').innerHTML = renderAccountTasks(accountId)`.
+
+#### Re-render behavior
+
+When a task is checked off from the account detail tasks section:
+- `toggleTask(task.id)` is called (existing function, marks task completed and saves via `DB.set`).
+- The tasks section div (`#account-tasks-section`) re-renders inline by calling `renderAccountTasks(accountId)` and updating `innerHTML`.
+- The account detail modal stays open. Nothing else closes or refreshes.
+
+#### Architecture constraints
+
+- `db.js` only — no `localStorage` calls in `tasks.js` or `crm.js`.
+- `renderAccountTasks` returns HTML only. All logic (filtering, sorting) is in separate pure functions called before it.
+- CSS variables only — urgency chips use `var(--hot)`, `var(--warm)`, `var(--cold)`. No hardcoded hex values.
+- No new data fields. `accountId` and `tags` are already documented in Section 3.4.
+
 ---
 
 ## CHANGELOG
+
+### April 5, 2026 — Spec v6.2
+- Added Section 8.6: Account-Linked Tasks — full spec for task modal typeahead, account detail tasks section, renderAccountTasks(), and inline re-render behavior
+- Added "Account-Linked Tasks — Not built" to Section 3.1 build state table
+- No data model changes — accountId and tags already documented in Section 3.4
 
 ### April 4, 2026 — Spec v6.1
 - Added `followupDate` field to Account Data Model (Section 3.3)

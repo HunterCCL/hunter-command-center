@@ -449,6 +449,10 @@
         <button class="btn btn-primary btn-sm full-width" onclick="logInteraction()">Log Interaction</button>
       </div>
     </div>
+    <div class="modal-section">
+      <div class="modal-label">Tasks</div>
+      <div id="account-tasks-section"></div>
+    </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
       <button class="btn btn-ghost btn-sm" onclick="openCallPrep(currentAccountId)">📞 Prep for Call</button>
       <button class="btn btn-ghost btn-sm" onclick="copyContextToClaude()">📋 Copy Context to Claude</button>
@@ -468,6 +472,12 @@
       <div class="form-field"><label>Project</label><select id="task-project"><option value="">None</option><option value="Crest Houston Launch">Crest Houston Launch</option><option value="Palletech Partnership">Palletech Partnership</option><option value="CHB Exam Prep">CHB Exam Prep</option><option value="Real Estate Houston">Real Estate Houston</option><option value="Personal">Personal</option></select></div>
       <div class="form-field"><label>Recurrence</label><select id="task-recurrence" onchange="toggleRecurrenceFields()"><option value="none">None</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="days">Specific Days</option><option value="mwf">Mon/Wed/Fri</option><option value="custom">Custom Interval</option></select></div>
       <div class="form-field"><label>Time (optional)</label><input type="time" id="task-time" placeholder="09:00"></div>
+    </div>
+    <div class="form-field" style="margin-bottom:12px;position:relative" id="task-account-field">
+      <label>Account (optional)</label>
+      <div id="task-account-chip" style="display:none;margin-bottom:4px"></div>
+      <input type="text" id="task-account-input" placeholder="Type 3+ characters to search accounts..." autocomplete="off" oninput="onAccountTypeahead()">
+      <div id="task-account-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border-hover);border-radius:6px;z-index:100;margin-top:2px"></div>
     </div>
     <div id="days-of-week-field" style="display:none;margin-bottom:12px">
       <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Days of Week</div>
