@@ -185,6 +185,35 @@ function deleteTask(id) {
   renderTasks(); renderHome(); updateBadges();
 }
 
+// ============================================================
+// MOBILE QUICK-ADD
+// ============================================================
+
+function openMobileTaskModal() {
+  document.getElementById('mobile-task-name').value='';
+  document.getElementById('mobile-task-urgency').value='medium';
+  document.getElementById('mobile-task-due').value='';
+  document.getElementById('mobile-task-modal').classList.add('open');
+}
+
+function saveMobileTask() {
+  const name=document.getElementById('mobile-task-name').value.trim();
+  if(!name){showToast('Task name required');return;}
+  const tasks=DB.get('tasks');
+  tasks.unshift({
+    id:uid(),created:today(),name,
+    urgency:document.getElementById('mobile-task-urgency').value,
+    due:document.getElementById('mobile-task-due').value,
+    project:'',recurrence:'none',customDays:7,daysOfWeek:[],taskTime:'',tags:'',accountId:'',completed:false
+  });
+  DB.set('tasks',tasks);
+  closeModal('mobile-task-modal');
+  renderTasks();
+  renderHome();
+  updateBadges();
+  showToast('Task added');
+}
+
 
 // ============================================================
 // ACCOUNT-LINKED TASKS

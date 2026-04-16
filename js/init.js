@@ -8,9 +8,12 @@ function navigate(page) {
   if(currentPage==='projects'&&page!=='projects'&&lastProjectId) showClosingNote(lastProjectId);
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
-  const navItem=document.querySelector('[data-page="'+page+'"]');
+  const navItem=document.querySelector('.nav-item[data-page="'+page+'"]');
   if(navItem) navItem.classList.add('active');
+  const bottomNavItem=document.querySelector('.bottom-nav-item[data-page="'+page+'"]');
+  if(bottomNavItem) bottomNavItem.classList.add('active');
   currentPage=page;
   if(page==='home') renderHome();
   if(page==='crm') renderAccounts();
@@ -24,6 +27,9 @@ function navigate(page) {
 }
 
 document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click',()=>navigate(item.dataset.page));
+});
+document.querySelectorAll('.bottom-nav-item').forEach(item=>{
   item.addEventListener('click',()=>navigate(item.dataset.page));
 });
 

@@ -47,6 +47,29 @@
   </div>
 </nav>
 
+<nav id="bottom-nav">
+  <div class="bottom-nav-item active" data-page="home">
+    <span class="bottom-nav-icon">⚡</span>
+    <span class="bottom-nav-label">Home</span>
+  </div>
+  <div class="bottom-nav-item" data-page="crm">
+    <span class="bottom-nav-icon">🏢</span>
+    <span class="bottom-nav-label">Accounts</span>
+  </div>
+  <div class="bottom-nav-item" data-page="tasks">
+    <span class="bottom-nav-icon">✓</span>
+    <span class="bottom-nav-label">Tasks</span>
+  </div>
+  <div class="bottom-nav-item" data-page="calendar">
+    <span class="bottom-nav-icon">📅</span>
+    <span class="bottom-nav-label">Calendar</span>
+  </div>
+  <div class="bottom-nav-item" data-page="ai">
+    <span class="bottom-nav-icon">🤖</span>
+    <span class="bottom-nav-label">AI</span>
+  </div>
+</nav>
+
 <div id="main">
 
   <!-- HOME -->
@@ -147,6 +170,7 @@
       </div>
       <div class="tasks-list" id="tasks-list"></div>
     </div>
+    <button id="mobile-task-fab" onclick="openMobileTaskModal()">+</button>
   </div>
 
 
@@ -524,6 +548,25 @@
       <textarea id="fire-text" placeholder="What just came up? Be specific."></textarea>
       <p style="font-size:11px;color:var(--text-muted);margin-bottom:12px">Will be triaged by urgency and added to your task list.</p>
       <div style="display:flex;gap:10px"><button class="btn btn-ghost" onclick="closeModal('fire-modal')">Cancel</button><button class="btn btn-primary" onclick="categorizeFire()">Categorize + Add</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- MOBILE TASK QUICK-ADD MODAL -->
+<div class="modal-overlay" id="mobile-task-modal">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-header">
+      <div style="font-family:var(--font-display);font-size:18px;font-weight:800">Quick Add Task</div>
+      <button class="modal-close" onclick="closeModal('mobile-task-modal')">✕</button>
+    </div>
+    <div class="form-field" style="margin-bottom:12px"><label>Task Name *</label><input type="text" id="mobile-task-name" placeholder="What needs to happen?"></div>
+    <div class="task-modal-grid" style="grid-template-columns:1fr 1fr">
+      <div class="form-field"><label>Urgency</label><select id="mobile-task-urgency"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></div>
+      <div class="form-field"><label>Due Date</label><input type="date" id="mobile-task-due"></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button class="btn btn-ghost" onclick="closeModal('mobile-task-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMobileTask()">Add Task</button>
     </div>
   </div>
 </div>
