@@ -64,8 +64,7 @@
 <!-- MOBILE SYNC FAB (hidden on desktop) -->
 <button id="mobile-sync-fab" onclick="toggleMobileSyncPopup()">⟳ Sync</button>
 <div id="mobile-sync-popup">
-  <button class="mobile-sync-option" onclick="restoreFromSheets();closeMobileSyncPopup()">Restore from Sheets</button>
-  <button class="mobile-sync-option" onclick="syncAllToSheets();closeMobileSyncPopup()">Push to Sheets</button>
+  <div id="mobile-sync-popup-content"></div>
   <button class="mobile-sync-option cancel" onclick="closeMobileSyncPopup()">Cancel</button>
 </div>
 

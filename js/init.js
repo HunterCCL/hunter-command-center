@@ -47,7 +47,20 @@ function mobileNavigate(page) {
 // ============================================================
 
 function toggleMobileSyncPopup() {
-  document.getElementById('mobile-sync-popup').classList.toggle('open');
+  const popup = document.getElementById('mobile-sync-popup');
+  if (popup.classList.contains('open')) { closeMobileSyncPopup(); return; }
+  const connected = (syncStatus === 'connected' || syncStatus === 'syncing');
+  const content = document.getElementById('mobile-sync-popup-content');
+  if (connected) {
+    content.innerHTML =
+      '<button class="mobile-sync-option" onclick="restoreFromSheets();closeMobileSyncPopup()">Restore from Sheets</button>' +
+      '<button class="mobile-sync-option" onclick="syncAllToSheets();closeMobileSyncPopup()">Push to Sheets</button>' +
+      '<button class="mobile-sync-option disconnect" onclick="disconnectGoogle();closeMobileSyncPopup()">Disconnect</button>';
+  } else {
+    content.innerHTML =
+      '<button class="mobile-sync-option connect" onclick="handleSyncClick();closeMobileSyncPopup()">Connect Google Sheets</button>';
+  }
+  popup.classList.add('open');
 }
 function closeMobileSyncPopup() {
   document.getElementById('mobile-sync-popup').classList.remove('open');

@@ -624,9 +624,10 @@
       cursor: pointer;
       transition: background 0.1s;
     }
-    .mobile-sync-option:last-child { border-bottom: none; }
     .mobile-sync-option:active { background: rgba(255,255,255,0.04); }
     .mobile-sync-option.cancel { color: var(--text-dim); }
+    .mobile-sync-option.connect { color: #4a90d9; }
+    .mobile-sync-option.disconnect { color: var(--hot); }
 
     /* MOBILE TASK FAB */
     #mobile-task-fab {
