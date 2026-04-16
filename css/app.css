@@ -24,6 +24,25 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: var(--font-body); background: var(--navy-dark); color: var(--text); height: 100vh; overflow: hidden; display: flex; }
 
+  /* SYNC INDICATOR */
+  #sync-indicator {
+    position: fixed;
+    bottom: 20px;
+    left: 24px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    z-index: 300;
+  }
+  #sync-indicator.visible { opacity: 1; }
+
   /* MOBILE ELEMENTS — hidden on desktop by default */
   #mobile-top-bar { display: none; }
   #mobile-sync-fab { display: none; }
@@ -524,6 +543,9 @@
   @media (max-width: 768px) {
     #sidebar { display: none; }
     #main { padding-top: 48px; }
+
+    /* Sync indicator — above the Sync pill on mobile */
+    #sync-indicator { bottom: 68px; left: 50%; transform: translateX(-50%); }
 
     /* MOBILE TOP BAR */
     #mobile-top-bar {

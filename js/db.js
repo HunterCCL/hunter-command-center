@@ -64,6 +64,21 @@ let gisReady = false;
 let tokenClient = null;
 let syncStatus = 'disconnected'; // disconnected | connected | syncing | error
 let syncDebounceTimer = null;
+let syncIndicatorTimer = null;
+
+function showSyncIndicator(state) {
+  const el = document.getElementById('sync-indicator');
+  if (!el) return;
+  clearTimeout(syncIndicatorTimer);
+  if (state === 'syncing') {
+    el.textContent = 'Syncing...';
+    el.classList.add('visible');
+  } else if (state === 'saved') {
+    el.textContent = 'Saved ✓';
+    el.classList.add('visible');
+    syncIndicatorTimer = setTimeout(() => el.classList.remove('visible'), 3000);
+  }
+}
 
 function setSyncStatus(status, msg) {
   syncStatus = status;
@@ -143,7 +158,7 @@ function checkLibsReady() {
       const token = JSON.parse(savedToken);
       gapi.client.setToken(token);
       setSyncStatus('connected', 'Reconnected');
-      syncAllToSheets();
+      autoRestoreFromSheets();
     } catch(e) {
       localStorage.removeItem('hcc_goog_token');
     }
@@ -197,16 +212,17 @@ function disconnectGoogle() {
   showToast('Google disconnected');
 }
 
-// Debounced sync — waits 1.5s after last change before writing
+// Debounced sync — waits 500ms after last change before writing
 function scheduleSyncToSheets() {
   if (syncStatus !== 'connected' && syncStatus !== 'syncing') return;
   clearTimeout(syncDebounceTimer);
-  syncDebounceTimer = setTimeout(() => syncAllToSheets(), 1500);
+  syncDebounceTimer = setTimeout(() => syncAllToSheets(), 500);
 }
 
 async function syncAllToSheets() {
   if (!gapiReady || !gapi.client.getToken()) return;
   setSyncStatus('syncing', 'Writing to Sheets...');
+  showSyncIndicator('syncing');
   try {
     const accounts = DB.get('accounts');
     const interactions = DB.get('interactions');
@@ -249,6 +265,7 @@ async function syncAllToSheets() {
 
     const now = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
     setSyncStatus('connected', 'Last sync: '+now);
+    showSyncIndicator('saved');
     localStorage.setItem('hcc_goog_token', JSON.stringify(gapi.client.getToken()));
   } catch(e) {
     console.error('Sync error:', e);
@@ -361,5 +378,68 @@ async function restoreFromSheets() {
     btn.textContent = 'Restore from Sheets';
   }
 }
+
+// Silent auto-restore on reconnect — no confirm dialog, no reload, re-renders in place.
+async function autoRestoreFromSheets() {
+  if (!gapiReady || !gapi.client.getToken()) { syncAllToSheets(); return; }
+  try {
+    const readTab = async (tab) => {
+      const resp = await gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId: SHEETS_CONFIG.SHEET_ID, range: tab,
+      });
+      return resp.result.values || [];
+    };
+    const rowsToObjects = (rows) => {
+      if (rows.length < 2) return [];
+      const headers = rows[0];
+      return rows.slice(1).map(row => {
+        const obj = {};
+        headers.forEach((h, i) => { obj[h] = row[i] !== undefined ? row[i] : ''; });
+        return obj;
+      });
+    };
+
+    const [contactRows, interactionRows, taskRows, projectRows] = await Promise.all([
+      readTab('Contacts'), readTab('Interactions'), readTab('Tasks'), readTab('Projects'),
+    ]);
+
+    const accounts = rowsToObjects(contactRows).map(a => ({ ...a, priority: a.priority === 'TRUE' }));
+    const interactions = rowsToObjects(interactionRows);
+    const tasks = rowsToObjects(taskRows).map(t => ({
+      ...t,
+      completed: t.completed === 'TRUE',
+      customDays: t.customDays ? parseInt(t.customDays) : 7,
+      daysOfWeek: (() => { try { return JSON.parse(t.daysOfWeek||'[]'); } catch(e) { return []; } })(),
+    }));
+    const projects = rowsToObjects(projectRows).map(p => ({
+      ...p,
+      notes: (() => { try { return JSON.parse(p.notes); } catch(e) { return []; } })(),
+      milestones: [],
+    }));
+
+    _originalSet('accounts', accounts);
+    _originalSet('interactions', interactions);
+    _originalSet('tasks', tasks);
+    _originalSet('projects', projects);
+
+    const now = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    setSyncStatus('connected', 'Last sync: '+now);
+    showSyncIndicator('saved');
+    showToast('Loaded latest from Sheets');
+    if (typeof navigate === 'function') navigate(currentPage);
+  } catch(e) {
+    console.error('Auto-restore error:', e);
+    syncAllToSheets(); // fall back to push
+  }
+}
+
+// Safety net — cancel pending debounce and fire immediately on page close.
+window.addEventListener('beforeunload', function() {
+  if (syncDebounceTimer !== null) {
+    clearTimeout(syncDebounceTimer);
+    syncDebounceTimer = null;
+    syncAllToSheets();
+  }
+});
 
 
