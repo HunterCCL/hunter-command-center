@@ -8,12 +8,9 @@ function navigate(page) {
   if(currentPage==='projects'&&page!=='projects'&&lastProjectId) showClosingNote(lastProjectId);
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.querySelectorAll('.bottom-nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   const navItem=document.querySelector('.nav-item[data-page="'+page+'"]');
   if(navItem) navItem.classList.add('active');
-  const bottomNavItem=document.querySelector('.bottom-nav-item[data-page="'+page+'"]');
-  if(bottomNavItem) bottomNavItem.classList.add('active');
   currentPage=page;
   if(page==='home') renderHome();
   if(page==='crm') renderAccounts();
@@ -29,8 +26,45 @@ function navigate(page) {
 document.querySelectorAll('.nav-item').forEach(item=>{
   item.addEventListener('click',()=>navigate(item.dataset.page));
 });
-document.querySelectorAll('.bottom-nav-item').forEach(item=>{
-  item.addEventListener('click',()=>navigate(item.dataset.page));
+
+// ============================================================
+// MOBILE NAV
+// ============================================================
+
+function toggleMobileNav() {
+  document.getElementById('mobile-nav-dropdown').classList.toggle('open');
+}
+function closeMobileNav() {
+  document.getElementById('mobile-nav-dropdown').classList.remove('open');
+}
+function mobileNavigate(page) {
+  closeMobileNav();
+  navigate(page);
+}
+
+// ============================================================
+// MOBILE SYNC POPUP
+// ============================================================
+
+function toggleMobileSyncPopup() {
+  document.getElementById('mobile-sync-popup').classList.toggle('open');
+}
+function closeMobileSyncPopup() {
+  document.getElementById('mobile-sync-popup').classList.remove('open');
+}
+
+// Outside-tap closes both mobile nav dropdown and sync popup
+document.addEventListener('click', function(e) {
+  const dd = document.getElementById('mobile-nav-dropdown');
+  const bar = document.getElementById('mobile-top-bar');
+  if (dd && dd.classList.contains('open') && !dd.contains(e.target) && bar && !bar.contains(e.target)) {
+    closeMobileNav();
+  }
+  const popup = document.getElementById('mobile-sync-popup');
+  const fab = document.getElementById('mobile-sync-fab');
+  if (popup && popup.classList.contains('open') && !popup.contains(e.target) && fab && !fab.contains(e.target)) {
+    closeMobileSyncPopup();
+  }
 });
 
 function updateBadges() {

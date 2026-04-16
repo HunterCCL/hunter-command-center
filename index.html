@@ -47,28 +47,27 @@
   </div>
 </nav>
 
-<nav id="bottom-nav">
-  <div class="bottom-nav-item active" data-page="home">
-    <span class="bottom-nav-icon">⚡</span>
-    <span class="bottom-nav-label">Home</span>
-  </div>
-  <div class="bottom-nav-item" data-page="crm">
-    <span class="bottom-nav-icon">🏢</span>
-    <span class="bottom-nav-label">Accounts</span>
-  </div>
-  <div class="bottom-nav-item" data-page="tasks">
-    <span class="bottom-nav-icon">✓</span>
-    <span class="bottom-nav-label">Tasks</span>
-  </div>
-  <div class="bottom-nav-item" data-page="calendar">
-    <span class="bottom-nav-icon">📅</span>
-    <span class="bottom-nav-label">Calendar</span>
-  </div>
-  <div class="bottom-nav-item" data-page="ai">
-    <span class="bottom-nav-icon">🤖</span>
-    <span class="bottom-nav-label">AI</span>
-  </div>
-</nav>
+<!-- MOBILE TOP BAR (hidden on desktop) -->
+<div id="mobile-top-bar" onclick="toggleMobileNav()">
+  <span id="mobile-menu-label">Menu ▾</span>
+</div>
+<div id="mobile-nav-dropdown">
+  <div class="mobile-nav-row" onclick="mobileNavigate('home')">⚡ Home</div>
+  <div class="mobile-nav-row" onclick="mobileNavigate('crm')">🏢 Accounts</div>
+  <div class="mobile-nav-row" onclick="mobileNavigate('tasks')">✓ Tasks</div>
+  <div class="mobile-nav-row" onclick="mobileNavigate('calendar')">📅 Calendar</div>
+  <div class="mobile-nav-row" onclick="mobileNavigate('projects')">📁 Projects</div>
+  <div class="mobile-nav-row" onclick="mobileNavigate('followups')">🔔 Follow-ups</div>
+  <div class="mobile-nav-row" onclick="mobileNavigate('ai')">🤖 AI</div>
+</div>
+
+<!-- MOBILE SYNC FAB (hidden on desktop) -->
+<button id="mobile-sync-fab" onclick="toggleMobileSyncPopup()">⟳ Sync</button>
+<div id="mobile-sync-popup">
+  <button class="mobile-sync-option" onclick="restoreFromSheets();closeMobileSyncPopup()">Restore from Sheets</button>
+  <button class="mobile-sync-option" onclick="syncAllToSheets();closeMobileSyncPopup()">Push to Sheets</button>
+  <button class="mobile-sync-option cancel" onclick="closeMobileSyncPopup()">Cancel</button>
+</div>
 
 <div id="main">
 
