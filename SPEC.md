@@ -300,14 +300,18 @@ The app is architected to migrate cleanly to this stack when needed:
 | AI Assistant | Working | Gemini chat with Hunter context as system prompt, quick prompt buttons |
 | Morning Briefing | Working | AI-generated paragraph on home screen |
 | Call Prep | Partially built | Intel Gate, Pre-Call, Live Call, Post-Call tabs exist but modal has stacking bug. AI generation not yet wired to Gemini. |
-| Google Sheets sync | Working | OAuth 2.0, auto-syncs every change, green/amber/red dot indicator |
+| Google Sheets sync | Working | OAuth 2.0, auto-syncs on every DB.set() with 500ms debounce, auto-restores from Sheets on reconnect, beforeunload safety-net push, Syncing/Saved indicator |
 | Priority flagging | Working | Star on every account card, Priority tab as default view |
 | Source tab display | Working | Grey chip on every imported account showing which spreadsheet tab it came from |
 | Tags | Working | Free-form tags on accounts, shown as purple chips, filterable |
 | Lists | Working | Named lists, create/delete, assign accounts via edit modal, filter by list |
 | Filter row | Working | Source, List, and Tag dropdowns below pipeline tabs |
-| Follow-up Dashboard | Not built | See Section 8.1 for full spec |
-| Account-Linked Tasks | Not built | See Section 8.6 for full spec |
+| Follow-up Dashboard | Working | Sidebar nav item with red overdue badge, Follow-ups tab in Accounts, 3 buckets (Overdue/Due This Week/Coming Up), home summary card, cross-module sync with linked tasks tagged 'followup' |
+| Account-Linked Tasks | Partially working | Task modal typeahead works, account chip on task rows works; open bug: tasks not appearing in account detail Tasks section |
+| Mobile Navigation | Working | Sidebar hidden on mobile (max-width 768px); fixed top bar with "Menu ▾" toggles dropdown of all 7 modules; outside-tap closes; all mobile elements hidden on desktop |
+| Mobile Sync Popup | Working | Sync pill fixed bottom-center on mobile; context-aware: Connect when unauthenticated, Restore / Push to Sheets / Disconnect when connected; Cancel always present |
+| Mobile Task Quick-Add | Working | Floating + FAB on Tasks page (mobile only); 3-field modal: name, urgency, due date; separate minimal save path, no recurrence or project |
+| Sync Status Indicator | Working | Fixed overlay: Syncing... / Saved ✓; bottom-left on desktop, bottom-center above sync pill on mobile; fades in/out |
 
 ### 3.2 Migration State
 
@@ -420,6 +424,7 @@ Task `project` field must exactly match these strings or linked task display bre
 - **Restore-from-Sheets** — If localStorage is cleared, data is safe in Sheets but manual restore function not yet built.
 - **Architecture Rule 4 violations** — Inline hardcoded colors and sizes exist throughout JS-generated HTML from before this rule was established. Fix opportunistically during refactor.
 - **File size** — Currently ~576k chars as a single HTML file. Refactor to multi-file is the immediate next session.
+- **Account-linked tasks not showing in account detail** — Tasks saved from task modal with account typeahead are not appearing in the Tasks section of the account detail modal. accountId writes correctly on save; diagnosis needed in saveTask() chip read logic. Fix: next priority session.
 
 ---
 
@@ -846,6 +851,20 @@ When a task is checked off from the account detail tasks section:
 ---
 
 ## CHANGELOG
+
+### April 15, 2026 — Mobile and Auto-Sync
+- Added mobile navigation: fixed top bar "Menu ▾" toggles full-width dropdown of all 7 modules; sidebar hidden on mobile via @media (max-width: 768px); outside-tap closes; all mobile elements hidden on desktop by CSS default (index.html, app.css, init.js)
+- Added mobile task quick-add FAB: floating + button on Tasks page opens 3-field modal (name, urgency, due date); own minimal save path; no recurrence, project, or account linking (index.html, app.css, tasks.js)
+- Added mobile sync popup: context-aware Sync pill fixed bottom-center on mobile; shows Connect when unauthenticated, Restore / Push to Sheets / Disconnect when connected; outside-tap closes (index.html, app.css, init.js)
+- Auto two-way sync: autoRestoreFromSheets() silently pulls all 4 tabs on reconnect and re-renders active page; DB.set() debounce reduced from 1500ms to 500ms; beforeunload handler cancels pending debounce and fires push immediately on page close (db.js)
+- Sync status indicator: Syncing... / Saved ✓ fixed overlay; bottom-left on desktop, bottom-center on mobile; opacity transition (db.js, index.html, app.css)
+- Updated Section 3.1 build state table and Section 3.8 known issues
+
+### April 15, 2026 — Follow-up Dashboard and Account-Linked Tasks
+- Follow-up Dashboard (Section 8.1) fully shipped: followups.js, sidebar nav item with red overdue badge, Follow-ups tab in Accounts, 3 buckets (Overdue / Due This Week / Coming Up), home summary card, cross-module sync — setting a follow-up date auto-creates linked task tagged 'followup'; checking it off logs interaction, clears followupDate, deletes task
+- Account-Linked Tasks (Section 8.6) partially shipped: task modal typeahead (3+ char search, chip selection, removable), account chip on task list rows, renderAccountTasks() in tasks.js, Tasks section with quick-add in account detail modal
+- Open bug: account-linked tasks not appearing in account detail Tasks section (see Section 3.8)
+- Updated Section 3.1 build state table
 
 ### April 5, 2026 — Spec v6.2
 - Added Section 8.6: Account-Linked Tasks — full spec for task modal typeahead, account detail tasks section, renderAccountTasks(), and inline re-render behavior
